@@ -1,6 +1,6 @@
-// ID1 205892664
-// ID2 313531113
-
+/**
+ * @author : Dvir Asaf 313531113.
+ */
 #ifndef MINCIRCLE_H_
 #define MINCIRCLE_H_
 

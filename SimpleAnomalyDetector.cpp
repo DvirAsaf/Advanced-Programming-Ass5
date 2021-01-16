@@ -1,6 +1,4 @@
 /**
- * SimpleAnomalyDetector.cpp
- *
  * @author : Dvir Asaf 313531113.
  */
 #include "SimpleAnomalyDetector.h"

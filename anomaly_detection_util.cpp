@@ -1,6 +1,4 @@
 /**
- * anomaly_detection_util.h
- *
  * @author : Dvir Asaf 313531113.
  */
 

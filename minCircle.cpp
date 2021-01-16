@@ -1,6 +1,6 @@
-// ID1 205892664
-// ID2 313531113
-
+/**
+ * @author : Dvir Asaf 313531113.
+ */
 #include <iostream>
 #include <cmath>
 #include <vector>

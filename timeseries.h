@@ -1,6 +1,4 @@
 /**
- * timeseries.h
- *
  * @author : Dvir Asaf 313531113.
  */
 #ifndef TIMESERIES_H_

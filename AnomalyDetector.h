@@ -1,5 +1,6 @@
-
-
+/**
+ * @author : Dvir Asaf 313531113.
+ */
 #ifndef ANOMALYDETECTOR_H_
 #define ANOMALYDETECTOR_H_
 

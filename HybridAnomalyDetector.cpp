@@ -1,3 +1,6 @@
+/**
+ * @author : Dvir Asaf 313531113.
+ */
 #include "HybridAnomalyDetector.h"
 
 HybridAnomalyDetector::HybridAnomalyDetector() {
