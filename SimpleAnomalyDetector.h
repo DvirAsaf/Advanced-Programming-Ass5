@@ -31,10 +31,10 @@ public:
     virtual ~SimpleAnomalyDetector();
     //check which columns have the best correlation update feature1,feature2 and corrlation, and create array of points
     // according to the columns vector, and update lin_reg.
-    //according to the line and points array send them to dev and update the struct threshold.
+    //according to the line and points array send them to dev and update the struct newThreshold.
     virtual void learnNormal(const TimeSeries& ts);
     //according to the values of the struct correlatedFeatures, create points are given in time series and check if the
-    // threshold of each point is higher the the value of cf.threshold, if yes return anomaly report.
+    // newThreshold of each point is higher the the value of cf.newThreshold, if yes return anomaly report.
     virtual vector<AnomalyReport> detect(const TimeSeries& ts);
     virtual void learnHelper(float pearson, Point **ps, int size, string s1, string s2, correlatedFeatures c) ;
     virtual bool pearsonResult(float pearson, float min);

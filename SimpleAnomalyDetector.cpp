@@ -43,7 +43,7 @@ void SimpleAnomalyDetector::learnHelper(float pearson, Point **ps, int size, str
 // corrlation, and create array of points
 // according to the columns vector, and update lin_reg.
 // according to the line and points array send them to dev and update the struct
-// threshold.
+// newThreshold.
 void SimpleAnomalyDetector::learnNormal(const TimeSeries &ts) {
     map<string, vector<float>> time = ts.allData;
     // size of how much values in each vector.
@@ -86,7 +86,7 @@ bool SimpleAnomalyDetector::isAnomalous(correlatedFeatures c, float x, float  y)
 
 // according to the values of the struct correlatedFeatures, create points are
 // given in time series and check if the
-// threshold of each point is higher the the value of cf.threshold, if yes
+// newThreshold of each point is higher the the value of cf.newThreshold, if yes
 // return anomaly report.
 vector<AnomalyReport> SimpleAnomalyDetector::detect(const TimeSeries &ts) {
     int size = ts.allData.begin()->second.size();

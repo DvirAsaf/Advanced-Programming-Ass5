@@ -5,12 +5,13 @@
 #define CLI_H_
 #include <string.h>
 #include "commands.h"
+#include <memory>
 using namespace std;
 class CLI {
-public:
     DefaultIO* dio;
-    CommandHelp help;
-    Command* comArr[6]{};
+    CommandHelp* help;
+    Command* comArr[6];
+public:
     CLI(DefaultIO* dio);
     void start();
     virtual ~CLI();

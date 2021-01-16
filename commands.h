@@ -4,7 +4,7 @@
 #ifndef COMMANDS_H_
 #define COMMANDS_H_
 #include<iostream>
-#include <cstring>
+#include <string.h>
 #include <fstream>
 #include <vector>
 #include <memory>
@@ -22,7 +22,7 @@ public:
 
 class CommandHelp {
 public:
-    double threshold;
+    double newThreshold;
     shared_ptr<HybridAnomalyDetector> detector;
 };
 
@@ -33,7 +33,7 @@ protected:
 public:
     explicit Command(DefaultIO* dio):dio(dio){}
     virtual void execute()=0;
-    virtual ~Command()= default;
+    virtual ~Command() {}
 };
 
 class uploadTimeSeriesCSVFile : public Command {
@@ -44,15 +44,22 @@ public:
     void execute() override {
         ofstream anomalyTrainCSV;
         ofstream anomalyTestCSV;
-        string inputString;
         string testCSVFile = "Please upload your local test CSV file.\n";
         string trainCSVFile = "Please upload your local train CSV file.\n";
-        string complete = "Upload complete.\n ";
+        string complete = "Upload complete.\n";
         anomalyTrainCSV.open("anomalyTrain.csv");
         dio->write(trainCSVFile);
-        inputString = dio->read();
+        string inputString = dio->read();
         while (inputString != "done") {
             anomalyTrainCSV << inputString << endl;
+            inputString = dio->read();
+        }
+        dio->write(complete);
+        anomalyTestCSV.open("anomalyTest.csv");
+        dio->write(testCSVFile);
+        inputString = dio->read();
+        while (inputString != "done") {
+            anomalyTestCSV << inputString << endl;
             inputString = dio->read();
         }
         dio->write(complete);
@@ -67,14 +74,14 @@ public:
          this->help = help1;
      }
      void execute() override {
-         string correlation = "The current correlation threshold is 0.9\n"
-                              "Enter a new value of threshold:\n";
+         string correlation = "The current correlation newThreshold is 0.9\n"
+                              "Type a new newThreshold\n";
          string selectedValue = "please choose a value between 0 to 1.\n";
          dio->write(correlation);
-         help->threshold = stof(dio->read());
-         while (help->threshold <= 0 || help->threshold >= 1) {
+         help->newThreshold = stof(dio->read());
+         while (help->newThreshold <= 0 || help->newThreshold >= 1) {
              dio->write(selectedValue);
-             help->threshold = stof(dio->read());
+             help->newThreshold = stof(dio->read());
          }
      }
  };
@@ -102,12 +109,9 @@ public:
          this->help = help1;
      };
      void execute() override {
-         string done = "done\n";
-         int size = help->detector->anomalyReport.size();
-         for(int i = 0; i < size; i++) {
-             string descriptionI = help->detector->anomalyReport[i].description;
-             long timeStepI = help->detector->anomalyReport[i].timeStep;
-             string s = to_string(timeStepI) + " \t" + descriptionI + "\n";
+         string done = "done.\n";
+         for(int i = 0; i < help->detector->anomalyReport.size(); i++) {
+             string s = to_string(help->detector->anomalyReport[i].timeStep) + " \t" + help->detector->anomalyReport[i].description + "\n";
              dio->write(s);
          }
          dio->write(done);
@@ -134,7 +138,7 @@ public:
          vector<pair<int, int> > anomaly;
          int pos = 0;
          int neg = TimeSeries("anomalyTest.csv").allData.begin()->second.size();
-         int time = 1000;
+         float time = 1000;
          int FP = 0;
          int TP = 0;
          dio->write(anomaliesFile);
@@ -156,9 +160,11 @@ public:
              int position = inputString.find(',');
              string string1 = inputString.substr(0, position);
              string string2 = inputString.substr(position + 1);
-             pair<int, int> pair2(stoi(string1), stoi(string2));
+             int str1 = stoi(string1);
+             int str2 = stoi(string2);
+             pair<int, int> pair2(str1, str2);
              timeMarks.push_back(pair2);
-             neg -= (stoi(string2) - stoi(string1));
+             neg -= (str2 - str1);
              inputString= dio->read();
              pos++;
          }
@@ -177,21 +183,19 @@ public:
                  FP++;
              }
          }
-         //false alarm rate
          falseAlarmRate = (FP * time / neg) ;
          falseAlarmRate = floor(falseAlarmRate);
          falseAlarmRate = falseAlarmRate/time;
          falsePs << falseAlarmRate;
          falsePstring = falsePs.str();
-         string printFalseRate = "False Positive Rate: " + falsePstring +"\n";
-         dio->write(printFalseRate);
-         // true positive rate
          truePositiveRate = (TP * time / pos) ;
          truePositiveRate = floor(truePositiveRate);
          truePositiveRate = truePositiveRate/time;
          truePs << truePositiveRate;
          truePstring = truePs.str();
          string printTrueRate = "True Positive Rate: " + truePstring +"\n";
+         string printFalseRate = "False Positive Rate: " + falsePstring +"\n";
+         dio->write(printFalseRate);
          dio->write(printTrueRate);
      }
 
