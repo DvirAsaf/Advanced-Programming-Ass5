@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
+#include <iomanip>
 #include "HybridAnomalyDetector.h"
 using namespace std;
 
@@ -19,10 +20,36 @@ public:
     virtual void read(float* f)=0;
     virtual ~DefaultIO()= default;
 };
+class StandardIO : public DefaultIO {
+public:
+    StandardIO() {
+
+    }
+
+    virtual string read() {
+        string s;
+        cin >> s;
+        return s;
+    }
+
+    virtual void write(string text) {
+        cout << text;
+    }
+
+    virtual void write(float f) {
+        cout << f;
+    }
+
+    virtual void read(float *f) {
+        cin >> *f;
+    }
+
+    ~StandardIO() {}
+};
 
 class CommandHelp {
 public:
-    double newThreshold;
+    float newThreshold = 0.9;
     shared_ptr<HybridAnomalyDetector> detector;
 };
 
@@ -74,10 +101,13 @@ public:
          this->help = help1;
      }
      void execute() override {
-         string correlation = "The current correlation newThreshold is 0.9\n"
-                              "Type a new newThreshold\n";
+         string s = to_string(help->newThreshold);
+//         std:: setprecision(3) << help->newThreshold << endl;
+         string correlation = "The current correlation newThreshold is " + s + "\n";
+         string ask = "Type a new newThreshold\n";
          string selectedValue = "please choose a value between 0 to 1.\n";
          dio->write(correlation);
+         dio->write(ask);
          help->newThreshold = stof(dio->read());
          while (help->newThreshold <= 0 || help->newThreshold >= 1) {
              dio->write(selectedValue);
@@ -99,6 +129,7 @@ public:
          ptrDetector->learnNormal(anomalyTrainCSV);
          ptrDetector->detect(anomalyTestCSV);
          help->detector = ptrDetector;
+         dio->write(help->detector->anomalyReport.size());
          dio->write(complete);
      }
  };
