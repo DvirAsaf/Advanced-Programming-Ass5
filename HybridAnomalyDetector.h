@@ -3,10 +3,8 @@
  */
 #ifndef HYBRIDANOMALYDETECTOR_H_
 #define HYBRIDANOMALYDETECTOR_H_
-
 #include "SimpleAnomalyDetector.h"
 #include "minCircle.h"
-
 class HybridAnomalyDetector:public SimpleAnomalyDetector {
 public:
     HybridAnomalyDetector();
@@ -15,5 +13,4 @@ public:
     virtual bool pearsonResult(float pearson, float min);
     virtual bool isAnomalous(correlatedFeatures c, float x, float y);
 };
-
 #endif /* HYBRIDANOMALYDETECTOR_H_ */

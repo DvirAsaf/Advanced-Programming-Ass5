@@ -103,9 +103,9 @@ vector<AnomalyReport> SimpleAnomalyDetector::detect(const TimeSeries &ts) {
                 description = c.feature1 + "-" + c.feature2;
                 timeStep = k + 1;
                 AnomalyReport an(description, timeStep);
-                vector_Anomaly_Report.push_back(an);
+                anomalyReport.push_back(an);
             }
         }
     }
-    return vector_Anomaly_Report;
+    return anomalyReport;
 }

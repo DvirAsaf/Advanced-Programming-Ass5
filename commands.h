@@ -1,3 +1,4 @@
+
 /**
  * @author : Dvir Asaf 313531113.
  */
@@ -8,237 +9,197 @@
 #include <fstream>
 #include <vector>
 #include <memory>
-#include <iomanip>
 #include "HybridAnomalyDetector.h"
-using namespace std;
-
-class DefaultIO{
+class DefaultIO {
 public:
-    virtual string read()=0;
-    virtual void write(string text)=0;
-    virtual void write(float f)=0;
-    virtual void read(float* f)=0;
-    virtual ~DefaultIO()= default;
+    virtual string read() = 0;
+    virtual void write(string text) = 0;
+    virtual void write(float f) = 0;
+    virtual void read(float *f) = 0;
+    virtual ~DefaultIO() {}
 };
-class StandardIO : public DefaultIO {
-public:
-    StandardIO() {
-
-    }
-
-    virtual string read() {
-        string s;
-        cin >> s;
-        return s;
-    }
-
-    virtual void write(string text) {
-        cout << text;
-    }
-
-    virtual void write(float f) {
-        cout << f;
-    }
-
-    virtual void read(float *f) {
-        cin >> *f;
-    }
-
-    ~StandardIO() {}
-};
-
 class CommandHelp {
 public:
-    float newThreshold = 0.9;
-    shared_ptr<HybridAnomalyDetector> detector;
+    double newThreshold;
+    HybridAnomalyDetector *detector;
+    CommandHelp(){
+        detector = new HybridAnomalyDetector;
+    };
 };
 
-class Command{
+class Command {
 protected:
-    DefaultIO* dio;
-    CommandHelp *help{};
+    DefaultIO *dio;
+    CommandHelp *help;
 public:
-    explicit Command(DefaultIO* dio):dio(dio){}
-    virtual void execute()=0;
+    Command(DefaultIO *dio) : dio(dio) {}
+    virtual void execute() = 0;
     virtual ~Command() {}
 };
 
 class uploadTimeSeriesCSVFile : public Command {
 public:
     explicit uploadTimeSeriesCSVFile(DefaultIO *dio) : Command(dio) {
-
     };
+
     void execute() override {
         ofstream anomalyTrainCSV;
         ofstream anomalyTestCSV;
-        string testCSVFile = "Please upload your local test CSV file.\n";
-        string trainCSVFile = "Please upload your local train CSV file.\n";
-        string complete = "Upload complete.\n";
         anomalyTrainCSV.open("anomalyTrain.csv");
-        dio->write(trainCSVFile);
-        string inputString = dio->read();
-        while (inputString != "done") {
-            anomalyTrainCSV << inputString << endl;
-            inputString = dio->read();
+        dio->write("Please upload your local train CSV file.\n");
+        string input = dio->read();
+        while (input != "done") {
+            anomalyTrainCSV << input << endl;
+            input = dio->read();
         }
-        dio->write(complete);
+        dio->write("Upload complete.\n");
         anomalyTestCSV.open("anomalyTest.csv");
-        dio->write(testCSVFile);
-        inputString = dio->read();
-        while (inputString != "done") {
-            anomalyTestCSV << inputString << endl;
-            inputString = dio->read();
+        dio->write("Please upload your local test CSV file.\n");
+        input = dio->read();
+        while (input != "done") {
+            anomalyTestCSV << input << endl;
+            input = dio->read();
         }
-        dio->write(complete);
+        dio->write("Upload complete.\n");
         anomalyTrainCSV.close();
         anomalyTestCSV.close();
     }
 };
 
- class algoSetting : public Command {
- public:
-     algoSetting(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
-         this->help = help1;
-     }
-     void execute() override {
-         string s = to_string(help->newThreshold);
-//         std:: setprecision(3) << help->newThreshold << endl;
-         string correlation = "The current correlation newThreshold is " + s + "\n";
-         string ask = "Type a new newThreshold\n";
-         string selectedValue = "please choose a value between 0 to 1.\n";
-         dio->write(correlation);
-         dio->write(ask);
-         help->newThreshold = stof(dio->read());
-         while (help->newThreshold <= 0 || help->newThreshold >= 1) {
-             dio->write(selectedValue);
-             help->newThreshold = stof(dio->read());
-         }
-     }
- };
+class algoSetting : public Command {
+public:
+    algoSetting(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
+        this->help = help1;
+    };
+    void execute() override {
+        //show the correlactiom and ask for new correlaction
+        dio->write("The current correlation threshold is 0.9\n"
+                   "Type a new threshold\n");
+        help->newThreshold = stof(dio->read());
+        while (help->newThreshold <= 0 || help->newThreshold >= 1) {
+            dio->write("please choose a value between 0 and 1.\n");
+            help->newThreshold = stof(dio->read());
+        }
+    }
+};
 
- class anomaliesDetection : public Command {
- public:
-     anomaliesDetection(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
-         this->help = help1;
-     };
-     void execute() override {
-         string  complete = "anomaly detection complete.\n";
-         shared_ptr<HybridAnomalyDetector> ptrDetector(new HybridAnomalyDetector());
-         TimeSeries anomalyTrainCSV("anomalyTrain.csv");
-         TimeSeries anomalyTestCSV("anomalyTest.csv");
-         ptrDetector->learnNormal(anomalyTrainCSV);
-         ptrDetector->detect(anomalyTestCSV);
-         help->detector = ptrDetector;
-         dio->write(help->detector->anomalyReport.size());
-         dio->write(complete);
-     }
- };
+class anomaliesDetection : public Command {
+public:
+    anomaliesDetection(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
+        this->help = help1;
+    };
+    void execute() override {
+        help->detector->learnNormal(TimeSeries("anomalyTrain.csv"));
+        help->detector->detect(TimeSeries("anomalyTest.csv"));
+        dio->write("anomaly detection complete.\n");
+    }
+};
 
- class displayResult : public Command {
- public:
-     displayResult(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
-         this->help = help1;
-     };
-     void execute() override {
-         string done = "done.\n";
-         for(int i = 0; i < help->detector->anomalyReport.size(); i++) {
-             string s = to_string(help->detector->anomalyReport[i].timeStep) + " \t" + help->detector->anomalyReport[i].description + "\n";
-             dio->write(s);
-         }
-         dio->write(done);
-     }
- };
+class displayResult : public Command {
+public:
+    displayResult(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
+        this->help = help1;
+    };
+    void execute() override {
+        int size = help->detector->anomalyReport.size();
+        vector<AnomalyReport> an = help->detector->anomalyReport;
+        for(int i = 0; i < size; i++) {
+            dio->write(to_string(an[i].timeStep) + "\t " + an[i].description + "\n");
+        }
+        dio->write("Done.\n");
+    }
+};
 
- class anomaliesAndAnalyze : public Command {
- public:
-     anomaliesAndAnalyze(DefaultIO *dio, CommandHelp*help1) : Command(dio) {
-         this->help = help1;
-     };
-     void execute() override {
-         string inputString;
-         string truePstring;
-         string falsePstring;
-         stringstream  truePs;
-         stringstream  falsePs;
-         long firstMark;
-         float truePositiveRate;
-         float falseAlarmRate;
-         string anomaliesFile = "Please upload your local anomalies file.\n";
-         string complete = "Upload complete.\n";
-         vector<pair<int, int> > timeMarks;
-         vector<pair<int, int> > anomaly;
-         int pos = 0;
-         int neg = TimeSeries("anomalyTest.csv").allData.begin()->second.size();
-         float time = 1000;
-         int FP = 0;
-         int TP = 0;
-         dio->write(anomaliesFile);
-         int size = help->detector->anomalyReport.size() - 1;
-         for (int i = 0; i < size; i++) {
-             firstMark = help->detector->anomalyReport[i].timeStep;
-             string des1 = help->detector->anomalyReport[i].description;
-             string des2 = help->detector->anomalyReport[i + 1].description;
-             long time1 = help->detector->anomalyReport[i + 1].timeStep;
-             long time2 = help->detector->anomalyReport[i].timeStep + 1;
-             while (des1 == des2 && time1 == time2) {
-                 i++;
-             }
-             pair<int, int> pair1(firstMark, help->detector->anomalyReport[i].timeStep);
-             anomaly.push_back(pair1);
-         }
-         inputString = dio->read();
-         while (inputString != "done") {
-             int position = inputString.find(',');
-             string string1 = inputString.substr(0, position);
-             string string2 = inputString.substr(position + 1);
-             int str1 = stoi(string1);
-             int str2 = stoi(string2);
-             pair<int, int> pair2(str1, str2);
-             timeMarks.push_back(pair2);
-             neg -= (str2 - str1);
-             inputString= dio->read();
-             pos++;
-         }
-         dio->write(complete);
-         for (auto & aR : anomaly) {
-             bool piece = false;
-             for (auto & tM : timeMarks) {
-                 if ((tM.second >= aR.first && aR.second >= tM.second) ||
-                     (tM.first >= aR.first && aR.second >= tM.first) ||
-                     (tM.first <= aR.first && aR.second <= tM.second)) {
-                     TP++;
-                     piece = true;
-                 }
-             }
-             if (piece != true) {
-                 FP++;
-             }
-         }
-         falseAlarmRate = (FP * time / neg) ;
-         falseAlarmRate = floor(falseAlarmRate);
-         falseAlarmRate = falseAlarmRate/time;
-         falsePs << falseAlarmRate;
-         falsePstring = falsePs.str();
-         truePositiveRate = (TP * time / pos) ;
-         truePositiveRate = floor(truePositiveRate);
-         truePositiveRate = truePositiveRate/time;
-         truePs << truePositiveRate;
-         truePstring = truePs.str();
-         string printTrueRate = "True Positive Rate: " + truePstring +"\n";
-         string printFalseRate = "False Positive Rate: " + falsePstring +"\n";
-         dio->write(printFalseRate);
-         dio->write(printTrueRate);
-     }
-
- };
+class anomaliesAndAnalyze : public Command {
+public:
+    anomaliesAndAnalyze(DefaultIO *dio, CommandHelp *help1) : Command(dio) {
+        this->help = help1;
+    };
+    void execute() override {
+        //TP = true positive, FP = false positive, FA = false alarm, fix = for printing 3 digit after the point
+        int fix = 1000;
+        string input, outputTP, outputFP;
+        long firstMark;
+        stringstream  TPss, FPss;
+        float SizeOfTP, sizeOfFA;
+        //reset the value of the counters.
+        int posi = 0, FP = 0, TP = 0;
+        //2 vectors for help the check between the reports from anomaly and the user anomaly.
+        vector<pair<int, int>> timeMarks;
+        vector<pair<int, int>> rangeOfAnomaly;
+        int neg = TimeSeries("anomalyTest.csv").allData.begin()->second.size();
+        dio->write("Please upload your local anomalies file.\n");
+        int size = help->detector->anomalyReport.size();
+        vector<AnomalyReport> an = help->detector->anomalyReport;
+        for (int i = 0; i < size; i++) {
+            firstMark = an[i].timeStep;
+            while (an[i].description == an[i + 1].description && (an[i].timeStep + 1) == an[i + 1].timeStep) {
+                i++;
+            }
+            pair<int, int> p(firstMark, an[i].timeStep);
+            rangeOfAnomaly.push_back(p);
+        }
+        input = dio->read();
+        while (input != "done") {
+            //separate timeMarks by using ','.
+            int separator = input.find(',');
+            string string1 = input.substr(0, separator);
+            string string2 = input.substr(separator + 1);
+            //insert to timeMarks the valuesin range string1 to string 2.
+            // s2i = string to int.
+            int s2i1 = stoi(string1);
+            int s2i2 = stoi(string2);
+            pair<int, int> p(s2i1, s2i2);
+            timeMarks.push_back(p);
+            neg -= (s2i2 - s2i1);
+            input = dio->read();
+            //increase posi by 1;
+            posi++;
+        }
+        dio->write("Upload complete.\n");
+        //checking our anomaly report vs. user report
+        int range = rangeOfAnomaly.size();
+        int marks = timeMarks.size();
+        for (int i = 0; i < range; i++) {
+            bool cut = false;
+            for (int j = 0; j < marks; j++) {
+                //in this condition we check if the user range has coincidence with 1 of the reports from anomaly.
+                if ((timeMarks[j].second >= rangeOfAnomaly[i].first && rangeOfAnomaly[i].second >= timeMarks[j].second) ||
+                    (timeMarks[j].first >= rangeOfAnomaly[i].first && rangeOfAnomaly[i].second >= timeMarks[j].first) ||
+                    (timeMarks[j].first <= rangeOfAnomaly[i].first && rangeOfAnomaly[i].second <= timeMarks[j].second)) {
+                    //increase TP
+                    TP++;
+                    cut = true;
+                }
+            }
+            //FP report, increase FP
+            if (!cut) {
+                FP++;
+            }
+        }
+        //negative
+        sizeOfFA = (FP * fix / neg);
+        sizeOfFA = floor(sizeOfFA);
+        sizeOfFA = sizeOfFA / fix;
+        FPss << sizeOfFA;
+        outputFP = FPss.str();
+        //positive
+        SizeOfTP = (TP * fix / posi);
+        SizeOfTP = floor(SizeOfTP);
+        SizeOfTP = SizeOfTP / fix;
+        TPss << SizeOfTP;
+        outputTP = TPss.str();
+        //printing
+        dio->write("True Positive Rate: " + outputTP +"\n");
+        dio->write("False Positive Rate: " + outputFP +"\n");
+    }
+};
 
 class exitFromCLI : public Command {
 public:
     explicit exitFromCLI(DefaultIO *dio) : Command(dio) {
     };
-
     void execute() override {
     }
 };
-
 #endif /* COMMANDS_H_ */

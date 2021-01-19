@@ -1,3 +1,4 @@
+
 /**
  * @author : Dvir Asaf 313531113.
  */
@@ -21,30 +22,22 @@ CLI::CLI(DefaultIO *dio) {
 }
 
 void CLI::start() {
-//    bool exit = false;
-
-
-    string menu =  "Welcome to the Anomaly Detection Server.\n"
-                    "Please choose an option:\n"
-                    "1.upload a time series csv file\n"
-                    "2.algorithm settings\n"
-                    "3.detect anomalies\n"
-                    "4.display results\n"
-                    "5.upload anomalies and analyze results\n"
-                    "6.exit\n";
-    dio->write(menu);
+    dio->write("Welcome to the Anomaly Detection Server.\n"
+               "Please choose an option:\n"
+               "1.upload a time series csv file\n"
+               "2.algorithm settings\n"
+               "3.detect anomalies\n"
+               "4.display results\n"
+               "5.upload anomalies and analyze results\n"
+               "6.exit\n");
     string chooseNumber = dio->read();
-    int inputFromUser = stoi(chooseNumber);
-    -- inputFromUser;
-    comArr[inputFromUser]->execute();
+    int input = stoi(chooseNumber);
+    -- input;
+    comArr[input]->execute();
     if (chooseNumber == "6") {
-            return;
-        }
-//        comArr[inputFromUser]->execute();
-//        else if (inputFromUser >= 0 && inputFromUser <=4) {
+        return;
+    }
     return CLI::start();
-//        }
-//    }
 }
 
 CLI::~CLI() {
